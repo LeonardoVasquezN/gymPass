@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum RolUsuario {
+  ADMINISTRADOR
+  PERSONAL
+}
+
+enum MetodoPago {
+  EFECTIVO
+  YAPE
+  PLIN
+  TRANSFERENCIA
+  TARJETA
+  OTRO
+}
+
+enum EstadoAsistencia {
+  REGISTRADA
+  VENCIDA
+  DNI_NO_ENCONTRADO
+}
+
+model Gimnasio {
+  id         String   @id @default(uuid()) @db.Uuid
+  nombre     String
+  slug       String   @unique
+  nombrePropietario String?
+  telefono   String?
+
+  qrYapeUrl  String?
+  qrPlinUrl  String?
+
+  activo          Boolean   @default(true)
+  pruebaHasta     DateTime? @db.Timestamptz(6)
+  suscripcionHasta DateTime? @db.Timestamptz(6)
+
+  creadoEn    DateTime @default(now()) @db.Timestamptz(6)
+  actualizadoEn DateTime @updatedAt @db.Timestamptz(6)
+
+  usuarios     Usuario[]
+  clientes     Cliente[]
+  membresias   Membresia[]
+  asistencias  Asistencia[]
+
+  @@index([activo, suscripcionHasta])
+  @@map("gimnasios")
+}
+
+model Usuario {
+  id         String    @id @db.Uuid
+  gimnasioId String    @db.Uuid
+  correo     String
+  nombre     String?
+  rol        RolUsuario @default(ADMINISTRADOR)
+  activo     Boolean   @default(true)
+
+  creadoEn      DateTime @default(now()) @db.Timestamptz(6)
+  actualizadoEn DateTime @updatedAt @db.Timestamptz(6)
+
+  gimnasio Gimnasio @relation(fields: [gimnasioId], references: [id], onDelete: Cascade)
+
+  @@unique([gimnasioId, correo])
+  @@index([gimnasioId])
+  @@map("usuarios")
+}
+
+model Cliente {
+  id         String  @id @default(uuid()) @db.Uuid
+  gimnasioId String  @db.Uuid
+  dni        String  @db.VarChar(8)
+  nombres    String
+  apellidos  String
+  telefono   String?
+  activo     Boolean @default(true)
+  observaciones String?
+
+  creadoEn      DateTime @default(now()) @db.Timestamptz(6)
+  actualizadoEn DateTime @updatedAt @db.Timestamptz(6)
+
+  gimnasio    Gimnasio    @relation(fields: [gimnasioId], references: [id], onDelete: Cascade)
+  membresias  Membresia[]
+  asistencias Asistencia[]
+
+  @@unique([gimnasioId, dni])
+  @@index([gimnasioId, apellidos, nombres])
+  @@index([gimnasioId, activo])
+  @@map("clientes")
+}
+
+model Membresia {
+  id         String   @id @default(uuid()) @db.Uuid
+  gimnasioId String   @db.Uuid
+  clienteId  String   @db.Uuid
+
+  fechaInicio   DateTime @db.Date
+  fechaVencimiento DateTime @db.Date
+
+  monto        Decimal    @db.Decimal(10, 2)
+  metodoPago   MetodoPago
+  observaciones String?
+
+  creadoEn DateTime @default(now()) @db.Timestamptz(6)
+
+  gimnasio Gimnasio @relation(fields: [gimnasioId], references: [id], onDelete: Cascade)
+  cliente  Cliente  @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+
+  @@index([gimnasioId, fechaVencimiento])
+  @@index([gimnasioId, clienteId, fechaVencimiento])
+  @@map("membresias")
+}
+
+model Asistencia {
+  id         String          @id @default(uuid()) @db.Uuid
+  gimnasioId String          @db.Uuid
+  clienteId  String?         @db.Uuid
+  dniIngresado String        @db.VarChar(8)
+  estado     EstadoAsistencia
+  fechaHora  DateTime        @default(now()) @db.Timestamptz(6)
+
+  gimnasio Gimnasio @relation(fields: [gimnasioId], references: [id], onDelete: Cascade)
+  cliente  Cliente? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+
+  @@index([gimnasioId, fechaHora])
+  @@index([gimnasioId, estado, fechaHora])
+  @@index([gimnasioId, dniIngresado, fechaHora])
+  @@map("asistencias")
+}
