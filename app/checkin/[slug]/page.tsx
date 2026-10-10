@@ -1,3 +1,5 @@
+export const instant = false;
+
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
