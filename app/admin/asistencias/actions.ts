@@ -34,6 +34,15 @@ if (!usuario || !usuario.activo || !usuario.gimnasio.activo) {
     redirect("/login");
 }
 
+const fechaLima = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Lima",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+}).format(new Date());
+
+const fechaActual = new Date(`${fechaLima}T00:00:00.000Z`);
+
 const cliente = await prisma.cliente.findUnique({
     where: {
         gimnasioId_dni: {
@@ -47,8 +56,16 @@ const cliente = await prisma.cliente.findUnique({
         membresias: {
             where: {
                 gimnasioId: usuario.gimnasioId,
+                fechaInicio: {
+                    lte: fechaActual,
+                },
+                fechaVencimiento: {
+                    gte: fechaActual,
+                },
             },
-            orderBy: { creadoEn: "desc" },
+            orderBy: {
+                fechaVencimiento: "desc",
+            },
             take: 1,
             select: {
                 fechaInicio: true,
@@ -68,26 +85,8 @@ let clienteId: string | null = null;
 if (cliente) {
     clienteId = cliente.id;
 
-    const membresia = cliente.membresias[0];
-
-    const fechaLima = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "America/Lima",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    }).format(new Date());
-
-    if (cliente.activo && membresia) {
-        const inicio = membresia.fechaInicio.toISOString().slice(0, 10);
-        const vencimiento = membresia.fechaVencimiento
-            .toISOString()
-            .slice(0, 10);
-
-        if (inicio <= fechaLima && vencimiento >= fechaLima) {
-            estado = "REGISTRADA";
-        } else {
-            estado = "VENCIDA";
-        }
+    if (cliente.activo && cliente.membresias.length > 0) {
+        estado = "REGISTRADA";
     } else {
         estado = "VENCIDA";
     }

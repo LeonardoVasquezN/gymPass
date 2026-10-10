@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { connection } from "next/server";
 import { Users, CreditCard, AlertCircle, UserCheck } from "lucide-react";
+import QrAcceso from "./qr-acceso";
 
 function obtenerFechaLima() {
   const partes = new Intl.DateTimeFormat("en-US", {
@@ -39,7 +40,11 @@ export default async function AdminPage() {
       activo: true,
       gimnasioId: true,
       gimnasio: {
-        select: { nombre: true, activo: true },
+          select: {
+              nombre: true,
+              slug: true,
+              activo: true,
+          },
       },
     },
   });
@@ -171,6 +176,11 @@ export default async function AdminPage() {
           })}
         </div>
       </section>
+
+      <QrAcceso
+            slug={usuario.gimnasio.slug}
+            nombreGimnasio={usuario.gimnasio.nombre}
+        />
     </div>
   );
 }
