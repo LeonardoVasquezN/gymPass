@@ -2,6 +2,7 @@ export const instant = false;
 
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import FormularioAsistencia from "./formulario-asistencia";
 
 type Props = {
     params: Promise<{
@@ -42,37 +43,7 @@ export default async function CheckinPage({ params }: Props) {
                     </p>
                 </div>
 
-                <form className="space-y-4">
-                    <div>
-                        <label
-                            htmlFor="dni"
-                            className="mb-2 block text-sm font-medium text-gray-200"
-                        >
-                            Número de DNI
-                        </label>
-
-                        <input
-                            id="dni"
-                            name="dni"
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]{8}"
-                            maxLength={8}
-                            minLength={8}
-                            placeholder="Ingresa tu DNI"
-                            required
-                            className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-lime-400 focus:ring-2 focus:ring-lime-400/20"
-                        />
-                    </div>
-
-                    <button
-                        type="button"
-                        disabled
-                        className="w-full rounded-xl bg-lime-400 px-4 py-3 font-semibold text-gray-950 opacity-60"
-                    >
-                        Continuaremos en el siguiente paso
-                    </button>
-                </form>
+                <FormularioAsistencia slug={gimnasio.slug} />
 
                 <p className="mt-6 text-center text-xs text-gray-500">
                     Acceso de asistencia de {gimnasio.nombre}
