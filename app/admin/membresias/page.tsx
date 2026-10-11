@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { crearMembresia } from "./actions";
 import { CreditCard, Search } from "lucide-react";
+import FormularioMembresia from "./formulario-membresia";
 
 type SearchParams = Promise<{
   mensaje?: string;
@@ -98,12 +98,22 @@ export default async function MembresiasPage({
         activo: true,
         ...condicionBusquedaCliente,
       },
-      select: {
-        id: true,
-        dni: true,
-        nombres: true,
-        apellidos: true,
+     select: {
+      id: true,
+      dni: true,
+      nombres: true,
+      apellidos: true,
+      membresias: {
+        orderBy: [
+          { fechaVencimiento: "desc" },
+          { creadoEn: "desc" },
+        ],
+        take: 1,
+        select: {
+          fechaVencimiento: true,
+        },
       },
+    },
       orderBy: [{ apellidos: "asc" }, { nombres: "asc" }],
       take: 100,
     }),
@@ -140,6 +150,17 @@ export default async function MembresiasPage({
 
   const hoy = obtenerHoyLima();
 
+  const clientesFormulario = clientes.map((cliente) => ({
+    id: cliente.id,
+    nombres: cliente.nombres,
+    apellidos: cliente.apellidos,
+    dni: cliente.dni,
+    ultimaFechaVencimiento:
+      cliente.membresias[0]?.fechaVencimiento
+        .toISOString()
+        .slice(0, 10) ?? null,
+  }));
+
   return (
     <div className="space-y-8">
       <div>
@@ -173,114 +194,10 @@ export default async function MembresiasPage({
           Selecciona un cliente, define la duración y registra su pago.
         </p>
 
-        <form action={crearMembresia} className="mt-6 grid gap-5 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <label htmlFor="clienteId" className="mb-1.5 block text-xs font-medium text-slate-300">
-              Cliente
-            </label>
-            <select
-              id="clienteId"
-              name="clienteId"
-              required
-              defaultValue=""
-              className="w-full rounded-xl border border-slate-800 bg-[#080C14] px-4 py-2.5 text-sm text-slate-200 outline-none transition focus:border-emerald-500"
-            >
-              <option value="" disabled>
-                Selecciona un cliente
-              </option>
-              {clientes.map((cliente) => (
-                <option key={cliente.id} value={cliente.id}>
-                  {cliente.apellidos}, {cliente.nombres} · DNI {cliente.dni}
-                </option>
-              ))}
-            </select>
-            {clientes.length === 0 && (
-              <p className="mt-2 text-xs text-amber-400">
-                No hay clientes activos que mostrar. Registra un cliente primero.
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="duracionMeses" className="mb-1.5 block text-xs font-medium text-slate-300">
-              Duración
-            </label>
-            <select
-              id="duracionMeses"
-              name="duracionMeses"
-              required
-              defaultValue="1"
-              className="w-full rounded-xl border border-slate-800 bg-[#080C14] px-4 py-2.5 text-sm text-slate-200 outline-none transition focus:border-emerald-500"
-            >
-              <option value="1">1 mes</option>
-              <option value="2">2 meses</option>
-              <option value="3">3 meses</option>
-              <option value="6">6 meses</option>
-              <option value="12">12 meses</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="monto" className="mb-1.5 block text-xs font-medium text-slate-300">
-              Monto pagado (S/)
-            </label>
-            <input
-              id="monto"
-              name="monto"
-              type="number"
-              min="0.01"
-              max="99999999.99"
-              step="0.01"
-              required
-              placeholder="Ej. 80.00"
-              className="w-full rounded-xl border border-slate-800 bg-[#080C14] px-4 py-2.5 text-sm text-slate-200 outline-none transition focus:border-emerald-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="metodoPago" className="mb-1.5 block text-xs font-medium text-slate-300">
-              Método de pago
-            </label>
-            <select
-              id="metodoPago"
-              name="metodoPago"
-              required
-              defaultValue="EFECTIVO"
-              className="w-full rounded-xl border border-slate-800 bg-[#080C14] px-4 py-2.5 text-sm text-slate-200 outline-none transition focus:border-emerald-500"
-            >
-              <option value="EFECTIVO">Efectivo</option>
-              <option value="YAPE">Yape</option>
-              <option value="PLIN">Plin</option>
-              <option value="TRANSFERENCIA">Transferencia</option>
-              <option value="TARJETA">Tarjeta</option>
-              <option value="OTRO">Otro</option>
-            </select>
-          </div>
-
-          <div className="sm:col-span-2">
-            <label htmlFor="observaciones" className="mb-1.5 block text-xs font-medium text-slate-300">
-              Observaciones (opcional)
-            </label>
-            <textarea
-              id="observaciones"
-              name="observaciones"
-              rows={3}
-              maxLength={1000}
-              placeholder="Notas sobre el pago o la membresía..."
-              className="w-full rounded-xl border border-slate-800 bg-[#080C14] p-3 text-sm text-slate-200 outline-none transition focus:border-emerald-500"
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <button
-              type="submit"
-              disabled={clientes.length === 0}
-              className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Registrar membresía
-            </button>
-          </div>
-        </form>
+        <FormularioMembresia
+          clientes={clientesFormulario}
+          hoy={hoy}
+        />
       </section>
 
       <section className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-6 backdrop-blur-sm">

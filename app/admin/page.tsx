@@ -73,9 +73,14 @@ export default async function AdminPage() {
       },
       select: {
         membresias: {
-          orderBy: { creadoEn: "desc" },
+          orderBy: [
+            { fechaVencimiento: "desc" },
+            { creadoEn: "desc" },
+          ],
           take: 1,
-          select: { fechaVencimiento: true },
+          select: {
+            fechaVencimiento: true,
+          },
         },
       },
     }),
