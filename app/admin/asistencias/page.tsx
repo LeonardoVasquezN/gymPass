@@ -16,6 +16,8 @@ const mensajes: Record<string, string> = {
   registrada: "Asistencia registrada. Membresía vigente.",
   vencida: "Registro realizado: el cliente no tiene una membresía vigente o está inactivo.",
   dni_no_encontrado: "No se encontró un cliente con ese DNI en este gimnasio.",
+  cliente_inactivo: "El cliente está inactivo y no se registró su asistencia.",
+  ya_asistio: "Este cliente ya tiene un intento de asistencia registrado hoy.",
 };
 
 export default async function AsistenciasPage({
