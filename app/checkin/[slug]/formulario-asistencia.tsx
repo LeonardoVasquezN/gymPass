@@ -19,7 +19,9 @@ export default function FormularioAsistencia({ slug }: Props) {
         inicial: "",
         no_matriculado: "border-red-500/30 bg-red-500/10 text-red-300",
         registrada: "border-lime-500/30 bg-lime-500/10 text-lime-300",
-        vencida: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+        vencida: estado.fechaVencimiento
+        ? "border-red-500/30 bg-red-500/10 text-red-300"
+        : "border-amber-500/30 bg-amber-500/10 text-amber-300",
         error: "border-red-500/30 bg-red-500/10 text-red-300",
     }[estado.tipo];
 

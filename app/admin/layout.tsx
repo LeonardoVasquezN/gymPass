@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  Settings,
 } from "lucide-react";
 
 const navigation = [
@@ -20,6 +21,7 @@ const navigation = [
   { name: "Clientes", href: "/admin/clientes", icon: Users },
   { name: "Membresías", href: "/admin/membresias", icon: CreditCard },
   { name: "Asistencias", href: "/admin/asistencias", icon: CheckCircle2 },
+  { name: "Configuración", href: "/admin/configuracion", icon: Settings },
 ];
 
 export default function AdminLayout({
