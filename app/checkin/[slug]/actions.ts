@@ -9,7 +9,11 @@ export type EstadoConsulta = {
         | "no_matriculado"
         | "registrada"
         | "vencida"
-        | "error";
+        | "error"
+        | "sin_membresia"
+        | "cliente_inactivo"
+        | "membresia_futura";
+
     mensaje: string;
     fechaVencimiento?: string;
     diasRestantes?: number;
@@ -61,18 +65,16 @@ export async function consultarAsistencia(
             select: {
                 id: true,
                 activo: true,
-                membresias: {
+                  membresias: {
                     where: {
                         gimnasioId: gimnasio.id,
-                        fechaInicio: {
-                            lte: fechaActual,
-                        },
                     },
                     orderBy: {
-                        fechaVencimiento: "desc",
+                        fechaInicio: "desc",
                     },
                     take: 1,
                     select: {
+                        fechaInicio: true,
                         fechaVencimiento: true,
                     },
                 },
@@ -86,45 +88,67 @@ export async function consultarAsistencia(
             };
         }
 
-        const membresia = cliente.membresias[0];
+        if (!cliente.activo) {
+            return {
+                tipo: "cliente_inactivo",
+                mensaje: "Tu cuenta está inactiva. Comunícate con tu gimnasio.",
+            };
+        }
 
-        const vencimiento = membresia
-            ? membresia.fechaVencimiento.toISOString().slice(0, 10)
-            : undefined;
+                const membresia = cliente.membresias[0];
 
-        const tieneMembresiaVigente =
-            cliente.activo &&
-            vencimiento !== undefined &&
-            vencimiento >= fechaLima;
+        if (!membresia) {
+            return {
+                tipo: "sin_membresia",
+                mensaje:
+                    "No tienes una membresía registrada. Comunícate con tu gimnasio para matricularte.",
+            };
+        }
 
-        let diasRestantes: number | undefined;
+        const inicio = membresia.fechaInicio
+            .toISOString()
+            .slice(0, 10);
 
-        if (tieneMembresiaVigente && vencimiento) {
+        const vencimiento = membresia.fechaVencimiento
+            .toISOString()
+            .slice(0, 10);
+
+        if (inicio > fechaLima) {
+            return {
+                tipo: "membresia_futura",
+                mensaje: `Tu membresía aún no comienza. Inicia el ${new Intl.DateTimeFormat(
+                    "es-PE",
+                    {
+                        dateStyle: "long",
+                        timeZone: "UTC",
+                    }
+                ).format(new Date(`${inicio}T00:00:00.000Z`))}.`,
+                fechaVencimiento: vencimiento,
+            };
+        }
+
+        const tieneMembresiaVigente = vencimiento >= fechaLima;
+
+        if (tieneMembresiaVigente) {
             const hoyUTC = new Date(`${fechaLima}T00:00:00.000Z`);
             const vencimientoUTC = new Date(
                 `${vencimiento}T00:00:00.000Z`
             );
 
-            diasRestantes = Math.round(
+            const diasRestantes = Math.round(
                 (vencimientoUTC.getTime() - hoyUTC.getTime()) /
                     (1000 * 60 * 60 * 24)
             );
-        }
 
-        const estado = tieneMembresiaVigente
-            ? "REGISTRADA"
-            : "VENCIDA";
+            await prisma.asistencia.create({
+                data: {
+                    gimnasioId: gimnasio.id,
+                    clienteId: cliente.id,
+                    dniIngresado: dni,
+                    estado: "REGISTRADA",
+                },
+            });
 
-        await prisma.asistencia.create({
-            data: {
-                gimnasioId: gimnasio.id,
-                clienteId: cliente.id,
-                dniIngresado: dni,
-                estado,
-            },
-        });
-
-        if (tieneMembresiaVigente) {
             return {
                 tipo: "registrada",
                 mensaje: "Asistencia registrada correctamente.",
@@ -133,11 +157,19 @@ export async function consultarAsistencia(
             };
         }
 
+        await prisma.asistencia.create({
+            data: {
+                gimnasioId: gimnasio.id,
+                clienteId: cliente.id,
+                dniIngresado: dni,
+                estado: "VENCIDA",
+            },
+        });
+
         return {
             tipo: "vencida",
-            mensaje: vencimiento
-                ? "Su membresía ya venció. Comuníquese con su gimnasio para su renovación."
-                : "No tienes una membresía vigente. Comunícate con tu gimnasio para matricularte o renovar.",
+            mensaje:
+                "Su membresía ya venció. Comuníquese con su gimnasio para su renovación.",
             fechaVencimiento: vencimiento,
         };
             } catch (error) {

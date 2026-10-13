@@ -20,9 +20,16 @@ export default function FormularioAsistencia({ slug }: Props) {
         no_matriculado: "border-red-500/30 bg-red-500/10 text-red-300",
         registrada: "border-lime-500/30 bg-lime-500/10 text-lime-300",
         vencida: estado.fechaVencimiento
-        ? "border-red-500/30 bg-red-500/10 text-red-300"
-        : "border-amber-500/30 bg-amber-500/10 text-amber-300",
+            ? "border-red-500/30 bg-red-500/10 text-red-300"
+            : "border-amber-500/30 bg-amber-500/10 text-amber-300",
         error: "border-red-500/30 bg-red-500/10 text-red-300",
+
+        sin_membresia:
+            "border-amber-500/30 bg-amber-500/10 text-amber-300",
+        cliente_inactivo:
+            "border-red-500/30 bg-red-500/10 text-red-300",
+        membresia_futura:
+            "border-amber-500/30 bg-amber-500/10 text-amber-300",
     }[estado.tipo];
 
     return (
