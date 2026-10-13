@@ -242,8 +242,11 @@ export default async function MembresiasPage({
             </thead>
             <tbody className="divide-y divide-slate-800/60 bg-slate-900/20">
               {membresias.map((membresia) => {
-                const vencida =
-                  membresia.fechaVencimiento.toISOString().slice(0, 10) < hoy;
+                const fechaInicio = membresia.fechaInicio.toISOString().slice(0, 10);
+                const fechaVencimiento = membresia.fechaVencimiento.toISOString().slice(0, 10);
+
+                const pendiente = fechaInicio > hoy;
+                const vencida = fechaVencimiento < hoy;
 
                 return (
                   <tr key={membresia.id} className="transition hover:bg-slate-800/30">
@@ -260,12 +263,16 @@ export default async function MembresiasPage({
                     <td className="px-4 py-3.5 font-medium text-slate-200">S/ {Number(membresia.monto).toFixed(2)}</td>
                     <td className="px-4 py-3.5 text-slate-400">{membresia.metodoPago}</td>
                     <td className="px-4 py-3.5">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${
-                        vencida
-                          ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                          : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                      }`}>
-                        {vencida ? "Vencida" : "Vigente"}
+                      <span
+                        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+                          pendiente
+                            ? "border-amber-500/20 bg-amber-500/10 text-amber-400"
+                            : vencida
+                              ? "border-rose-500/20 bg-rose-500/10 text-rose-400"
+                              : "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                        }`}
+                      >
+                        {pendiente ? "Pendiente" : vencida ? "Vencida" : "Vigente"}
                       </span>
                     </td>
                   </tr>

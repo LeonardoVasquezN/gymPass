@@ -70,16 +70,19 @@ export default function FormularioMembresia({
   const [clienteId, setClienteId] = useState("");
   const [tipoDuracion, setTipoDuracion] = useState<"meses" | "personalizada">("meses");
   const [duracionMeses, setDuracionMeses] = useState("1");
+  const [fechaInicioManual, setFechaInicioManual] = useState("");
   const [fechaVencimiento, setFechaVencimiento] = useState("");
 
   const clienteSeleccionado = clientes.find(
     (cliente) => cliente.id === clienteId
   );
 
-  const fechaInicio = obtenerInicio(
+  const fechaInicioSugerida = obtenerInicio(
     hoy,
     clienteSeleccionado?.ultimaFechaVencimiento ?? null
   );
+
+  const fechaInicio = fechaInicioManual || fechaInicioSugerida;
 
   const vencimientoCalculado =
     tipoDuracion === "meses"
@@ -160,19 +163,32 @@ export default function FormularioMembresia({
       </div>
 
       <div className="sm:col-span-2 rounded-xl border border-gray-800 bg-gray-900 p-4">
-        <p className="text-sm text-gray-400">
-          Fecha de inicio calculada
-        </p>
+        <label
+          htmlFor="fechaInicio"
+          className="block text-sm font-medium text-gray-200"
+        >
+          Fecha de inicio
+        </label>
 
-        <p className="mt-1 font-semibold text-white">
-          {fechaLegible(fechaInicio)}
-        </p>
+        <input
+          id="fechaInicio"
+          name="fechaInicio"
+          type="date"
+          min={hoy}
+          required
+          value={fechaInicio}
+          onChange={(event) => {
+            setFechaInicioManual(event.target.value);
+            setFechaVencimiento("");
+          }}
+          className={campo}
+        />
 
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-2 text-xs text-gray-400">
           {clienteSeleccionado?.ultimaFechaVencimiento &&
           clienteSeleccionado.ultimaFechaVencimiento >= hoy
-            ? "Se conservarán los días de la membresía anterior."
-            : "La nueva membresía comienza hoy."}
+            ? "La fecha sugerida conserva los días restantes de la membresía anterior. Puedes programar otro inicio."
+            : "Puedes comenzar hoy o programar una fecha futura."}
         </p>
       </div>
 
