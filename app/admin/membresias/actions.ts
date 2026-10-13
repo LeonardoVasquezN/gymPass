@@ -178,7 +178,13 @@ export async function crearMembresia(formData: FormData) {
     },
   });
 
-  let fechaInicio = hoy;
+  const fechaInicio = fechaDesdeFormulario(
+    String(formData.get("fechaInicio") ?? "")
+  );
+
+  if (!fechaInicio || fechaInicio < hoy) {
+    redirect("/admin/membresias?mensaje=duracion_invalida");
+  }
 
   if (ultimaMembresia) {
     const diaSiguiente = new Date(
@@ -187,8 +193,8 @@ export async function crearMembresia(formData: FormData) {
 
     diaSiguiente.setUTCDate(diaSiguiente.getUTCDate() + 1);
 
-    if (diaSiguiente > fechaInicio) {
-      fechaInicio = diaSiguiente;
+    if (fechaInicio < diaSiguiente) {
+      redirect("/admin/membresias?mensaje=duracion_invalida");
     }
   }
 

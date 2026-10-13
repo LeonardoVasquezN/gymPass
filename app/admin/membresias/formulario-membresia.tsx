@@ -116,7 +116,11 @@ export default function FormularioMembresia({
           name="clienteId"
           required
           value={clienteId}
-          onChange={(event) => setClienteId(event.target.value)}
+          onChange={(event) => {
+            setClienteId(event.target.value);
+            setFechaInicioManual("");
+            setFechaVencimiento("");
+          }}
           className={campo}
         >
           <option value="">Selecciona un cliente</option>

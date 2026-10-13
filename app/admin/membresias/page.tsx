@@ -112,7 +112,7 @@ export default async function MembresiasPage({
         select: {
           fechaVencimiento: true,
         },
-      },  
+      },
     },
       orderBy: [{ apellidos: "asc" }, { nombres: "asc" }],
       take: 100,
