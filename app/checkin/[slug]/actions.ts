@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export type EstadoConsulta = {
     tipo:
@@ -139,7 +140,17 @@ export async function consultarAsistencia(
                 : "No tienes una membresía vigente. Comunícate con tu gimnasio para matricularte o renovar.",
             fechaVencimiento: vencimiento,
         };
-    } catch (error) {
+            } catch (error) {
+        if (
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            error.code === "P2002"
+        ) {
+            return {
+                tipo: "error",
+                mensaje: "Tu intento de asistencia ya fue registrado hoy.",
+            };
+        }
+
         console.error("Error al consultar asistencia:", error);
 
         return {
