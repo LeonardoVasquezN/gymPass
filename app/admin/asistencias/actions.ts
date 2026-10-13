@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export async function registrarAsistencia(formData: FormData) {
 const dni = String(formData.get("dni") ?? "").trim();
@@ -75,31 +76,63 @@ const cliente = await prisma.cliente.findUnique({
     },
 });
 
-let estado:
-    | "REGISTRADA"
-    | "VENCIDA"
-    | "DNI_NO_ENCONTRADO" = "DNI_NO_ENCONTRADO";
-
-let clienteId: string | null = null;
-
-if (cliente) {
-    clienteId = cliente.id;
-
-    if (cliente.activo && cliente.membresias.length > 0) {
-        estado = "REGISTRADA";
-    } else {
-        estado = "VENCIDA";
-    }
+if (!cliente) {
+    redirect("/admin/asistencias?mensaje=dni_no_encontrado");
 }
 
-await prisma.asistencia.create({
-    data: {
+if (!cliente.activo) {
+    redirect("/admin/asistencias?mensaje=cliente_inactivo");
+}
+
+const inicioDia = new Date(`${fechaLima}T05:00:00.000Z`);
+
+const finDia = new Date(inicioDia.getTime() + 24 * 60 * 60 * 1000);
+
+const asistenciaExistente = await prisma.asistencia.findFirst({
+    where: {
         gimnasioId: usuario.gimnasioId,
-        clienteId,
-        dniIngresado: dni,
-        estado,
+        clienteId: cliente.id,
+        estado: {
+            in: ["REGISTRADA", "VENCIDA"],
+        },
+        fechaHora: {
+            gte: inicioDia,
+            lt: finDia,
+        },
+    },
+    select: {
+        id: true,
     },
 });
+
+if (asistenciaExistente) {
+    redirect("/admin/asistencias?mensaje=ya_asistio");
+}
+
+const estado =
+    cliente.membresias.length > 0
+        ? "REGISTRADA"
+        : "VENCIDA";
+
+try {
+    await prisma.asistencia.create({
+        data: {
+            gimnasioId: usuario.gimnasioId,
+            clienteId: cliente.id,
+            dniIngresado: dni,
+            estado,
+        },
+    });
+} catch (error) {
+    if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+    ) {
+        redirect("/admin/asistencias?mensaje=ya_asistio");
+    }
+
+    throw error;
+}
 
 revalidatePath("/admin/asistencias");
 revalidatePath("/admin");
