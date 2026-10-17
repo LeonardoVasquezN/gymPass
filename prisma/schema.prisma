@@ -9,22 +9,24 @@ datasource db {
 }
 
 model Gimnasio {
-  id                String       @id @default(uuid()) @db.Uuid
+  id                String            @id @default(uuid()) @db.Uuid
   nombre            String
-  slug              String       @unique
+  slug              String            @unique
   nombrePropietario String?
   telefono          String?
   qrYapeUrl         String?
   qrPlinUrl         String?
-  activo            Boolean      @default(true)
-  pruebaHasta       DateTime?    @db.Timestamptz(6)
-  suscripcionHasta  DateTime?    @db.Timestamptz(6)
-  creadoEn          DateTime     @default(now()) @db.Timestamptz(6)
-  actualizadoEn     DateTime     @updatedAt @db.Timestamptz(6)
+  activo            Boolean           @default(true)
+  pruebaHasta       DateTime?         @db.Timestamptz(6)
+  suscripcionHasta  DateTime?         @db.Timestamptz(6)
+  creadoEn          DateTime          @default(now()) @db.Timestamptz(6)
+  actualizadoEn     DateTime          @updatedAt @db.Timestamptz(6)
   asistencias       Asistencia[]
   clientes          Cliente[]
   membresias        Membresia[]
   usuarios          Usuario[]
+  invitaciones      Invitacion[]
+  pagosSuscripcion  PagoSuscripcion[]
 
   @@index([activo, suscripcionHasta])
   @@map("gimnasios")
@@ -44,6 +46,44 @@ model Usuario {
   @@unique([gimnasioId, correo])
   @@index([gimnasioId])
   @@map("usuarios")
+}
+
+model Invitacion {
+  id         String     @id @default(uuid()) @db.Uuid
+  gimnasioId String     @db.Uuid
+  correo     String
+  rol        RolUsuario @default(ADMINISTRADOR)
+  tokenHash  String     @unique @db.VarChar(64)
+  expiraEn   DateTime   @db.Timestamptz(6)
+  aceptadaEn DateTime?  @db.Timestamptz(6)
+  revocadaEn DateTime?  @db.Timestamptz(6)
+  creadoEn   DateTime   @default(now()) @db.Timestamptz(6)
+
+  gimnasio Gimnasio @relation(fields: [gimnasioId], references: [id], onDelete: Cascade)
+
+  @@index([gimnasioId, correo])
+  @@index([expiraEn])
+  @@map("invitaciones")
+}
+
+model PagoSuscripcion {
+  id               String                @id @default(uuid()) @db.Uuid
+  gimnasioId       String                @db.Uuid
+  monto            Decimal               @db.Decimal(10, 2)
+  moneda           String                @default("PEN") @db.VarChar(3)
+  metodoPago       MetodoPagoSuscripcion
+  fechaPago        DateTime              @default(now()) @db.Timestamptz(6)
+  fechaInicio      DateTime              @db.Timestamptz(6)
+  fechaVencimiento DateTime              @db.Timestamptz(6)
+  referencia       String?
+  observaciones    String?
+  creadoEn         DateTime              @default(now()) @db.Timestamptz(6)
+
+  gimnasio Gimnasio @relation(fields: [gimnasioId], references: [id], onDelete: Cascade)
+
+  @@index([gimnasioId, fechaVencimiento])
+  @@index([gimnasioId, fechaPago])
+  @@map("pagos_suscripcion")
 }
 
 model Cliente {
@@ -119,4 +159,13 @@ enum EstadoAsistencia {
   REGISTRADA
   VENCIDA
   DNI_NO_ENCONTRADO
+}
+
+enum MetodoPagoSuscripcion {
+  EFECTIVO
+  YAPE
+  PLIN
+  TRANSFERENCIA
+  TARJETA
+  OTRO
 }
